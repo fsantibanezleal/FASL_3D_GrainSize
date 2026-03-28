@@ -177,6 +177,49 @@
             </div>
         </div>
 
+        <!-- Calibration -->
+        <div class="ctrl-section">
+            <h3>Calibration</h3>
+            <div class="ctrl-row">
+                <label data-tooltip="Status: calibrated or uncalibrated">Status</label>
+                <span class="value" id="calib-status">Uncalibrated</span>
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Direct pixel size in mm/px">Pixel size (mm/px)</label>
+                <input type="number" id="ctrl-calib-pixel-size" value="1.0" min="0.001" max="1000" step="0.001">
+            </div>
+            <button class="btn btn-full" id="btn-calib-pixel-size">Set Pixel Size</button>
+            <hr style="border-color:#30363d;margin:6px 0">
+            <div class="ctrl-row">
+                <label data-tooltip="Reference point A (x, y)">Point A (x,y)</label>
+                <input type="text" id="ctrl-calib-point-a" value="0,0" placeholder="x,y">
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Reference point B (x, y)">Point B (x,y)</label>
+                <input type="text" id="ctrl-calib-point-b" value="100,0" placeholder="x,y">
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Known physical distance (mm)">Known length (mm)</label>
+                <input type="number" id="ctrl-calib-length" value="10.0" min="0.001" max="10000" step="0.01">
+            </div>
+            <button class="btn btn-full" id="btn-calib-reference">Set Reference</button>
+        </div>
+
+        <!-- Sieve data comparison -->
+        <div class="ctrl-section">
+            <h3>Compare with Sieve Data</h3>
+            <div class="ctrl-row">
+                <label data-tooltip="Comma-separated sieve sizes in mm">Sieve sizes (mm)</label>
+                <input type="text" id="ctrl-sieve-sizes" placeholder="0.075,0.15,0.3,0.6,1.18">
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Comma-separated cumulative passing %">Passing (%)</label>
+                <input type="text" id="ctrl-sieve-passing" placeholder="5,15,35,65,90">
+            </div>
+            <button class="btn btn-full" id="btn-compare-psd">Import Sieve Data</button>
+            <div id="comparison-results" style="margin-top:6px;font-size:11px;color:#8b949e;"></div>
+        </div>
+
     </div>
 </div>
 

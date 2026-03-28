@@ -62,6 +62,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
+from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 
 
@@ -352,4 +353,112 @@ def full_psd_analysis(
             "bin_edges": bin_edges.tolist(),
             "counts": counts.tolist(),
         },
+    }
+
+
+# ------------------------------------------------------------------ #
+# PSD comparison with ground truth sieve data
+# ------------------------------------------------------------------ #
+
+def compare_psd(
+    estimated_sizes: Sequence[float],
+    estimated_passing: Sequence[float],
+    true_sizes: Sequence[float],
+    true_passing: Sequence[float],
+) -> Dict[str, float]:
+    """Compare estimated PSD against ground truth sieve data.
+
+    Metrics:
+    - RMSE: Root Mean Square Error of cumulative passing
+    - KS test: Kolmogorov-Smirnov statistic (max difference)
+    - D50 error: |D50_estimated - D50_true| / D50_true
+
+    Parameters
+    ----------
+    estimated_sizes, estimated_passing : sequence of float
+        Estimated cumulative PSD curve.
+    true_sizes, true_passing : sequence of float
+        Ground truth (sieve analysis) cumulative PSD curve.
+
+    Returns
+    -------
+    metrics : dict
+        ``rmse``, ``ks_statistic``, ``estimated_d50``, ``true_d50``,
+        ``d50_relative_error``.
+    """
+    est_s = np.asarray(estimated_sizes, dtype=np.float64)
+    est_p = np.asarray(estimated_passing, dtype=np.float64)
+    true_s = np.asarray(true_sizes, dtype=np.float64)
+    true_p = np.asarray(true_passing, dtype=np.float64)
+
+    if len(est_s) < 2 or len(true_s) < 2:
+        return {
+            'rmse': float('nan'),
+            'ks_statistic': float('nan'),
+            'estimated_d50': float('nan'),
+            'true_d50': float('nan'),
+            'd50_relative_error': float('nan'),
+        }
+
+    # Interpolate both to common size grid
+    common_sizes = np.union1d(est_s, true_s)
+    lo = max(est_s.min(), true_s.min())
+    hi = min(est_s.max(), true_s.max())
+    common_sizes = common_sizes[(common_sizes >= lo) & (common_sizes <= hi)]
+
+    if len(common_sizes) < 2:
+        common_sizes = np.linspace(lo, hi, 50)
+
+    est_interp = interp1d(est_s, est_p,
+                          bounds_error=False, fill_value=(0, 100))
+    true_interp = interp1d(true_s, true_p,
+                           bounds_error=False, fill_value=(0, 100))
+
+    est_vals = est_interp(common_sizes)
+    true_vals = true_interp(common_sizes)
+
+    rmse = float(np.sqrt(np.mean((est_vals - true_vals) ** 2)))
+    ks_stat = float(np.max(np.abs(est_vals - true_vals)))
+
+    # D50 comparison
+    est_d50 = float(np.interp(50, est_p, est_s))
+    true_d50 = float(np.interp(50, true_p, true_s))
+    d50_error = abs(est_d50 - true_d50) / (true_d50 + 1e-10)
+
+    return {
+        'rmse': round(rmse, 4),
+        'ks_statistic': round(ks_stat, 4),
+        'estimated_d50': round(est_d50, 4),
+        'true_d50': round(true_d50, 4),
+        'd50_relative_error': round(float(d50_error), 4),
+    }
+
+
+def generate_sieve_ground_truth(
+    true_diameters: Sequence[float],
+    sieve_sizes: Optional[Sequence[float]] = None,
+) -> Dict:
+    """Generate the ground truth sieve analysis from known diameters.
+
+    Used for validation against the segmentation-based estimation.
+
+    Parameters
+    ----------
+    true_diameters : sequence of float
+        Known grain diameters (ground truth).
+    sieve_sizes : sequence of float or None
+        Custom sieve sizes.  If *None*, standard series is used.
+
+    Returns
+    -------
+    result : dict
+        ``sieve_sizes``, ``cum_passing`` (percentage), ``retained``.
+    """
+    sv_sizes, retained, cum_passing = compute_sieve_analysis(
+        true_diameters, sieve_sizes=sieve_sizes,
+    )
+    return {
+        "sieve_sizes": sv_sizes.tolist(),
+        "cum_passing": cum_passing.tolist(),
+        "retained": retained.tolist(),
     }

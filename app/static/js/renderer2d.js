@@ -227,7 +227,7 @@ const Renderer2D = (() => {
      * @param {string} canvasId
      * @param {object} psd - PSD data from the backend.
      */
-    function drawPSD(canvasId, psd) {
+    function drawPSD(canvasId, psd, comparison) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
         _fitCanvas(canvas);
@@ -327,6 +327,29 @@ const Renderer2D = (() => {
                 ctx.textAlign = "center";
                 ctx.fillText(`${key}=${val.toFixed(1)}`, x, pad.top - 4);
             }
+        }
+
+        // Ground truth overlay (sieve data comparison)
+        if (comparison && comparison.true_sizes && comparison.true_passing) {
+            const ts = comparison.true_sizes;
+            const tp = comparison.true_passing;
+            ctx.strokeStyle = "#f85149";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 3]);
+            ctx.beginPath();
+            for (let i = 0; i < ts.length; i++) {
+                const x = xScale(ts[i]);
+                const y = yScale(tp[i]);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Legend label for ground truth
+            ctx.fillStyle = "#f85149";
+            ctx.font = "10px monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("-- Ground truth (sieve)", pad.left + 6, pad.top + 14);
         }
 
         // Axes
