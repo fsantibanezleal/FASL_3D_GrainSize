@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GrainSight -- 3D Particle Size &amp; Granulometry Analyzer</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- ============================================================= -->
+<!-- HEADER                                                        -->
+<!-- ============================================================= -->
+<header id="app-header">
+    <h1>GrainSight</h1>
+    <span class="subtitle">3D Particle Size &amp; Granulometry Analyzer</span>
+    <div class="header-actions">
+        <span class="status-dot" id="ws-status" data-tooltip="WebSocket status"></span>
+        <button class="btn" id="btn-help" data-tooltip="Open help">? Help</button>
+        <button class="btn" id="btn-export" data-tooltip="Export grain measurements as CSV">Export CSV</button>
+    </div>
+</header>
+
+<!-- ============================================================= -->
+<!-- MAIN CONTAINER                                                -->
+<!-- ============================================================= -->
+<div id="app-container">
+
+    <!-- LEFT + CENTER content area -->
+    <div id="content-area">
+
+        <!-- Top row: 3 image panels -->
+        <div id="image-row">
+            <div class="image-panel">
+                <div class="panel-title">RGB Image</div>
+                <canvas id="canvas-rgb"></canvas>
+            </div>
+            <div class="image-panel">
+                <div class="panel-title">Depth Map</div>
+                <canvas id="canvas-depth"></canvas>
+            </div>
+            <div class="image-panel">
+                <div class="panel-title">Segmented Grains</div>
+                <canvas id="canvas-labels"></canvas>
+            </div>
+        </div>
+
+        <!-- Metrics bar -->
+        <div id="metrics-bar">
+            <div class="metric-item"><span class="label">Grains:</span><span class="value" id="m-grains">--</span></div>
+            <div class="metric-item"><span class="label">D10:</span><span class="value" id="m-d10">--</span></div>
+            <div class="metric-item"><span class="label">D25:</span><span class="value" id="m-d25">--</span></div>
+            <div class="metric-item"><span class="label">D50:</span><span class="value" id="m-d50">--</span></div>
+            <div class="metric-item"><span class="label">D75:</span><span class="value" id="m-d75">--</span></div>
+            <div class="metric-item"><span class="label">D80:</span><span class="value" id="m-d80">--</span></div>
+            <div class="metric-item"><span class="label">D90:</span><span class="value" id="m-d90">--</span></div>
+            <div class="metric-item"><span class="label">R-R x0:</span><span class="value" id="m-rr-x0">--</span></div>
+            <div class="metric-item"><span class="label">R-R n:</span><span class="value" id="m-rr-n">--</span></div>
+            <div class="metric-item"><span class="label">R^2:</span><span class="value" id="m-rr-r2">--</span></div>
+        </div>
+
+        <!-- Bottom row: PSD chart + grain table -->
+        <div id="bottom-row">
+            <div id="psd-panel">
+                <div class="panel-title">Particle Size Distribution</div>
+                <canvas id="canvas-psd"></canvas>
+            </div>
+            <div id="table-panel">
+                <div class="panel-title">Grain Measurements</div>
+                <div id="grain-table-wrap">
+                    <table id="grain-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th data-tooltip="Equivalent circular diameter">d_eq</th>
+                                <th data-tooltip="Grain area in pixels">Area</th>
+                                <th data-tooltip="Major/minor axis ratio">AR</th>
+                                <th data-tooltip="4*pi*A/P^2">Circ</th>
+                                <th data-tooltip="Estimated grain volume">Vol</th>
+                            </tr>
+                        </thead>
+                        <tbody id="grain-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT: Controls panel -->
+    <div id="controls-panel">
+
+        <!-- Scene generation -->
+        <div class="ctrl-section">
+            <h3>Scene Generation</h3>
+            <div class="ctrl-row">
+                <label>Distribution</label>
+                <select id="ctrl-bed-type">
+                    <option value="uniform">Uniform</option>
+                    <option value="normal">Normal</option>
+                    <option value="lognormal" selected>Log-normal</option>
+                    <option value="bimodal">Bimodal</option>
+                    <option value="rosin_rammler">Rosin-Rammler</option>
+                </select>
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Image width and height in pixels">Size (px)</label>
+                <input type="number" id="ctrl-width" value="256" min="64" max="512" step="64">
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Number of grains to generate">Grains</label>
+                <input type="number" id="ctrl-num-grains" value="50" min="5" max="300">
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Mean grain diameter in pixels">Mean d</label>
+                <input type="number" id="ctrl-mean-d" value="20" min="3" max="100" step="1">
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Standard deviation (or Rosin-Rammler uniformity index n)">Std d / n</label>
+                <input type="number" id="ctrl-std-d" value="5" min="0.5" max="50" step="0.5">
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Random seed for reproducibility (leave empty for random)">Seed</label>
+                <input type="number" id="ctrl-seed" value="" placeholder="random">
+            </div>
+            <button class="btn btn-primary btn-full" id="btn-generate">
+                <span class="spinner" id="spinner-gen"></span>
+                Generate Grain Bed
+            </button>
+        </div>
+
+        <!-- Segmentation parameters -->
+        <div class="ctrl-section">
+            <h3>Segmentation</h3>
+            <div class="ctrl-row">
+                <label>Method</label>
+                <select id="ctrl-seg-method">
+                    <option value="watershed" selected>Watershed</option>
+                    <option value="depth_edges">Depth edges</option>
+                </select>
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Minimum grain area in pixels">Min size</label>
+                <input type="number" id="ctrl-min-grain" value="5" min="1" max="100">
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Gaussian smoothing sigma">Smooth sigma</label>
+                <input type="number" id="ctrl-sigma" value="1.5" min="0.1" max="5" step="0.1">
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Minimum distance between grain peaks (px)">Min distance</label>
+                <input type="number" id="ctrl-min-dist" value="5" min="1" max="30">
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Relative peak detection threshold (0-1)">Peak thresh</label>
+                <input type="number" id="ctrl-peak-thresh" value="0.15" min="0.01" max="1" step="0.01">
+            </div>
+            <button class="btn btn-full" id="btn-resegment">
+                <span class="spinner" id="spinner-seg"></span>
+                Re-Segment
+            </button>
+        </div>
+
+        <!-- PSD options -->
+        <div class="ctrl-section">
+            <h3>PSD Analysis</h3>
+            <div class="ctrl-row">
+                <label data-tooltip="Weighting: count-based or mass-weighted (d^3)">Method</label>
+                <select id="ctrl-psd-method">
+                    <option value="number" selected>Number (count)</option>
+                    <option value="mass">Mass (volume)</option>
+                </select>
+            </div>
+            <div class="ctrl-row">
+                <label data-tooltip="Physical size of one pixel in mm">Pixel size (mm)</label>
+                <input type="number" id="ctrl-pixel-size" value="1.0" min="0.01" max="100" step="0.01">
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- HELP MODAL                                                    -->
+<!-- ============================================================= -->
+<div class="modal-overlay" id="help-modal">
+    <div class="modal-content">
+        <button class="close-btn" id="help-close">&times;</button>
+        <h2>GrainSight -- Help</h2>
+
+        <h3>What is Granulometry?</h3>
+        <p>Granulometry is the measurement of particle (grain) sizes within
+        a sample. The <strong>Particle Size Distribution (PSD)</strong>
+        describes the proportion of particles at each size class,
+        typically expressed as a cumulative passing curve.</p>
+
+        <h3>How RGB-D Enables 3D Grain Measurement</h3>
+        <p>An RGB-D camera captures both colour (RGB) and depth (D)
+        information. The depth map reveals grain topography: each grain
+        appears as a local peak separated by valleys. GrainSight
+        exploits these depth features for automatic grain segmentation
+        using the <strong>marker-based watershed algorithm</strong>.</p>
+
+        <h3>Segmentation Pipeline</h3>
+        <p>1. Smooth the depth map (Gaussian filter, sigma adjustable).<br>
+        2. Compute depth gradient magnitude: <code>|nabla z| = sqrt((dz/dx)^2 + (dz/dy)^2)</code>.<br>
+        3. Detect grain peaks (local maxima of depth).<br>
+        4. Run watershed transform using peaks as markers.<br>
+        5. Merge small fragments below the minimum grain size.</p>
+
+        <h3>Per-Grain Metrics</h3>
+        <p><strong>Equivalent diameter</strong>: <code>d_eq = 2*sqrt(A/pi)</code>,
+        the diameter of a circle with the same area as the grain footprint.<br>
+        <strong>Aspect ratio</strong>: major/minor axis from PCA.<br>
+        <strong>Circularity</strong>: <code>C = 4*pi*A/P^2</code> (1 = perfect circle).<br>
+        <strong>Volume</strong>: integral of depth above the estimated base plane.</p>
+
+        <h3>Interpretation of D-Values</h3>
+        <p><strong>D10</strong> -- 10% of particles are finer. Used in filtration design.<br>
+        <strong>D50</strong> -- median size. Half the material is finer.<br>
+        <strong>D80</strong> -- 80% passing. Key metric in comminution circuit design
+        (Bond work index calculations).<br>
+        <strong>D90</strong> -- 90% passing. Controls downstream equipment sizing.</p>
+
+        <h3>Rosin-Rammler Parameters</h3>
+        <p>The Rosin-Rammler model fits the PSD curve:
+        <code>F(x) = 1 - exp(-(x/x0)^n)</code><br>
+        <strong>x0</strong> (characteristic size): the size at which 63.2% of material passes.<br>
+        <strong>n</strong> (uniformity index): higher values indicate a narrower (more uniform) distribution.
+        Typical values: n=0.8-1.2 for blasted rock, n=2-4 for well-graded crushed aggregate.</p>
+
+        <h3>Commercial Software Comparison</h3>
+        <p>GrainSight implements algorithms similar to commercial systems like
+        <strong>WipFrag</strong>, <strong>Split Desktop</strong>, and <strong>GoldSize</strong>,
+        which are used in mining for muck pile fragmentation analysis. Unlike those 2D-only
+        systems, GrainSight also uses depth information for improved grain separation and
+        volume estimation.</p>
+    </div>
+</div>
+
+<script src="/static/js/websocket.js"></script>
+<script src="/static/js/renderer2d.js"></script>
+<script src="/static/js/renderer3d.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
