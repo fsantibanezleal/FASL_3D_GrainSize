@@ -27,43 +27,41 @@ In mining, particle size distribution determines processing efficiency and produ
 
 ## Mathematical Model
 
-### Equivalent Diameter
-
-Each grain's equivalent circular diameter is derived from its projected area:
-
-```
-d_eq = 2 * sqrt(A / pi)
-```
-
-where `A` is the segmented grain area in pixels (or calibrated units).
-
-### Rosin-Rammler Particle Size Distribution
-
-The cumulative retained fraction is modeled as:
+### Equivalent Diameter — Comparing Irregular Grains
+Real rock fragments are never spherical. To compare on a common scale, we compute the diameter of a circle with the same area (ISO 13322-1):
 
 ```
-R(x) = 1 - exp(-(x / x_0)^n)
+d_eq = 2 · √(A / π)
 ```
 
-where `x_0` is the characteristic grain size (63.2% passing) and `n` is the spread index (uniformity coefficient).
+where **A** is the segmented grain area (pixels or mm² if calibrated). A grain with area 314 mm² has d_eq = 20 mm.
 
-### Circularity
-
-A shape descriptor measuring how close a grain outline is to a perfect circle:
+### Rosin-Rammler Distribution — Fragmentation Physics
+Blast fragmentation produces sizes following the Rosin-Rammler (Weibull) distribution:
 
 ```
-Circularity = 4 * pi * A / P^2
+R(x) = 1 − exp(−(x / x₀)ⁿ)
 ```
 
-where `A` is the grain area and `P` is the grain perimeter. A perfect circle has circularity = 1.
+where **x₀** is the characteristic size (63.2% passing) and **n** is the uniformity index. High **n** (>3) = narrow range; low **n** (<1.5) = wide spread. Fitted via curve_fit with n ∈ [0.5, 5].
 
-### Aspect Ratio
+### Circularity — Shape Characterization
+Quantifies how close a grain is to a circle. Crushed rock is angular (C≈0.5), natural gravel is rounded (C≈0.8):
+
+```
+C = 4π · A / P²
+```
+
+where **A** is area and **P** is perimeter. Perfect circle: C=1. Flaky material: C→0.3.
+
+### Aspect Ratio — Elongation
+Measures grain elongation from PCA of the pixel coordinate cloud:
 
 ```
 AR = major_axis / minor_axis
 ```
 
-where the axes are derived from the eigenvalues of the grain region's inertia tensor.
+where axes come from eigenvalues of the inertia tensor. AR=1 is equant; AR>2 is elongated. Important for aggregate shape classification (BS EN 933-4).
 
 ### 3D Surface Area (Triangle Decomposition)
 
