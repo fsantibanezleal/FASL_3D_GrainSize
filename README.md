@@ -2,60 +2,11 @@
 
 A web-based application for grain size estimation from RGB-D data using marker-based watershed segmentation, per-grain geometric measurement, and Rosin-Rammler PSD curve fitting. Built with Python/FastAPI on the backend and HTML5 Canvas for interactive browser-based visualization. The system generates synthetic grain beds, segments individual particles, computes 18 morphometric descriptors per grain, and fits particle size distributions with configurable models.
 
-![Architecture](docs/svg/architecture.svg)
-
-![Pipeline](docs/svg/pipeline.svg)
-
-## Frontend
-
-![Frontend](docs/png/frontend.png)
-
 ---
 
-## Quick Start
+## Motivation & Problem
 
-```bash
-# Clone and enter the project
-cd FASL_3D_GrainSize
-
-# Create and activate virtual environment
-python -m venv .venv
-source .venv/Scripts/activate    # Windows Git Bash
-# source .venv/bin/activate      # Linux / macOS
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run tests
-python tests/test_generator.py
-python tests/test_segmentation.py
-python tests/test_measurement.py
-python tests/test_granulometry.py
-
-# Start the application
-python run_app.py
-
-# Open http://127.0.0.1:8010 in your browser
-```
-
----
-
-## Features
-
-- **5 synthetic PSD generators**: uniform, normal, log-normal, bimodal, and Rosin-Rammler distributions
-- **Marker-based watershed segmentation** on depth gradient magnitude with configurable thresholds
-- **18 per-grain geometric descriptors** (ISO 13322-1): equivalent diameter, major/minor axes, aspect ratio, circularity, depth-integrated volume, and more
-- **PSD curves**: number-weighted and mass-weighted cumulative distributions
-- **D-value extraction**: D10, D25, D50, D75, D80, D90 percentile diameters
-- **Rosin-Rammler distribution fitting** with least-squares optimization
-- **Sieve analysis simulation** using standard sieve series
-- **Pixel-to-mm calibration**: reference object or direct scale entry
-- **PSD comparison with ground truth** sieve data (RMSE, KS statistic, D50 error)
-- **Depth-integrated volume estimation** per grain from depth map
-- **CSV export** of grain measurements for external analysis
-- **Real-time web UI** with dark theme, interactive controls, PSD chart, and measurement table
-- **WebSocket streaming** for real-time state updates during processing
-- **REST API** with full control over generation, segmentation, and analysis parameters
+In mining, particle size distribution determines processing efficiency and product quality. Traditional sieve analysis is slow and offline. Image-based granulometry using RGB-D cameras enables real-time, non-contact grain size measurement on conveyor belts.
 
 ---
 
@@ -114,6 +65,89 @@ V = Sum (z(i,j) - z_base) * dx * dy
 ```
 
 where `z_base` is the local background depth and `dx`, `dy` are the calibrated pixel spacings.
+
+---
+
+## Processing Pipeline
+
+![Pipeline](docs/svg/pipeline.svg)
+
+---
+
+## Frontend
+
+![Frontend](docs/png/frontend.png)
+
+---
+
+## Architecture
+
+![Architecture](docs/svg/architecture.svg)
+
+---
+
+## Features
+
+- **5 synthetic PSD generators**: uniform, normal, log-normal, bimodal, and Rosin-Rammler distributions
+- **Marker-based watershed segmentation** on depth gradient magnitude with configurable thresholds
+- **18 per-grain geometric descriptors** (ISO 13322-1): equivalent diameter, major/minor axes, aspect ratio, circularity, depth-integrated volume, and more
+- **PSD curves**: number-weighted and mass-weighted cumulative distributions
+- **D-value extraction**: D10, D25, D50, D75, D80, D90 percentile diameters
+- **Rosin-Rammler distribution fitting** with least-squares optimization
+- **Sieve analysis simulation** using standard sieve series
+- **Pixel-to-mm calibration**: reference object or direct scale entry
+- **PSD comparison with ground truth** sieve data (RMSE, KS statistic, D50 error)
+- **Depth-integrated volume estimation** per grain from depth map
+- **CSV export** of grain measurements for external analysis
+- **Real-time web UI** with dark theme, interactive controls, PSD chart, and measurement table
+- **WebSocket streaming** for real-time state updates during processing
+- **REST API** with full control over generation, segmentation, and analysis parameters
+
+---
+
+## Quick Start
+
+```bash
+# Clone and enter the project
+cd FASL_3D_GrainSize
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/Scripts/activate    # Windows Git Bash
+# source .venv/bin/activate      # Linux / macOS
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run tests
+python tests/test_generator.py
+python tests/test_segmentation.py
+python tests/test_measurement.py
+python tests/test_granulometry.py
+
+# Start the application
+python run_app.py
+
+# Open http://127.0.0.1:8010 in your browser
+```
+
+### Running Tests
+
+```bash
+python tests/test_generator.py
+python tests/test_segmentation.py
+python tests/test_measurement.py
+python tests/test_granulometry.py
+
+# Or run all tests
+python -m pytest tests/ -v
+```
+
+### Building Standalone Executable
+
+```powershell
+.\Build_PyInstaller.ps1
+```
 
 ---
 
@@ -200,15 +234,6 @@ FASL_3D_GrainSize/
 
 ---
 
-## Technology Stack
-
-- **Backend**: Python 3.12+, FastAPI, Uvicorn, NumPy, SciPy, scikit-image
-- **Frontend**: Vanilla JavaScript, HTML5 Canvas, CSS3
-- **Protocol**: REST + WebSocket
-- **Packaging**: PyInstaller
-
----
-
 ## Documentation
 
 - [Architecture](docs/architecture.md) -- System design, components, data flow
@@ -216,27 +241,12 @@ FASL_3D_GrainSize/
 - [Development History](docs/development_history.md) -- Changelog and decisions
 - [References](docs/references.md) -- Academic papers and standards
 
----
+## Technology Stack
 
-## Running Tests
-
-```bash
-python tests/test_generator.py
-python tests/test_segmentation.py
-python tests/test_measurement.py
-python tests/test_granulometry.py
-
-# Or run all tests
-python -m pytest tests/ -v
-```
-
----
-
-## Building Standalone Executable
-
-```powershell
-.\Build_PyInstaller.ps1
-```
+- **Backend**: Python 3.12+, FastAPI, Uvicorn, NumPy, SciPy, scikit-image
+- **Frontend**: Vanilla JavaScript, HTML5 Canvas, CSS3
+- **Protocol**: REST + WebSocket
+- **Packaging**: PyInstaller
 
 ---
 
