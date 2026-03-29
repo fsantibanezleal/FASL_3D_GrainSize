@@ -12,16 +12,25 @@ In mining, particle size distribution determines processing efficiency and produ
 
 ---
 
-## KPIs & Metrics
+## KPIs — Impact & Value
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| Segmentation | Watershed on depth gradient | Marker-based + edge fallback |
-| Per-grain metrics | ISO 13322-1 descriptors | 18 measurements per grain |
-| PSD fitting | Rosin-Rammler R(x)=1−exp(−(x/x₀)ⁿ) | curve_fit with bounded n∈[0.5,5] |
-| D-value extraction | D10, D50, D80, D90 | Linear interpolation on CDF |
-| Calibration | Pixels to mm | Reference object or direct pixel_size |
-| Test coverage | Comprehensive | 50 tests passing |
+| KPI | Impact |
+|-----|--------|
+| Speed | From 4+ hours (physical sieve) → 30 seconds (image analysis) |
+| Non-destructive | No material consumed — reusable, continuous monitoring |
+| Real-time capable | Conveyor belt online measurement potential |
+| Cost reduction | Single RGB-D camera vs $100K+ laser sizer |
+
+## Project Metrics & Status
+
+| Metric | Status |
+|--------|--------|
+| Tests | 50 passing |
+| Per-grain descriptors | 18 (ISO 13322-1) |
+| PSD fitting | Rosin-Rammler with bounded n ∈ [0.5, 5] |
+| D-values | D10, D25, D50, D75, D80, D90 |
+| Calibration | Reference object or direct pixel_size_mm |
+| Comparison | RMSE, KS statistic, D50 relative error vs sieve |
 
 ---
 
