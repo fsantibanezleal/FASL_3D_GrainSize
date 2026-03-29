@@ -8,6 +8,21 @@ A web-based application for grain size estimation from RGB-D data using marker-b
 
 In mining, particle size distribution determines processing efficiency and product quality. Traditional sieve analysis is slow and offline. Image-based granulometry using RGB-D cameras enables real-time, non-contact grain size measurement on conveyor belts.
 
+![Processing Pipeline](docs/svg/pipeline.svg)
+
+---
+
+## KPIs & Metrics
+
+| Metric | Target | Current |
+|--------|--------|---------|
+| Segmentation | Watershed on depth gradient | Marker-based + edge fallback |
+| Per-grain metrics | ISO 13322-1 descriptors | 18 measurements per grain |
+| PSD fitting | Rosin-Rammler R(x)=1−exp(−(x/x₀)ⁿ) | curve_fit with bounded n∈[0.5,5] |
+| D-value extraction | D10, D50, D80, D90 | Linear interpolation on CDF |
+| Calibration | Pixels to mm | Reference object or direct pixel_size |
+| Test coverage | Comprehensive | 50 tests passing |
+
 ---
 
 ## Mathematical Model
