@@ -131,30 +131,39 @@ FASL_3D_GrainSize/
 │   │   ├── __init__.py
 │   │   ├── grain_generator.py           # Synthetic grain bed generator (5 distributions)
 │   │   ├── segmentation.py              # Marker-based watershed segmentation
-│   │   ├── measurement.py               # 18 per-grain morphometric descriptors
-│   │   └── granulometry.py              # PSD curves, D-values, Rosin-Rammler fit
+│   │   ├── grain_measurement.py         # 18 per-grain morphometric descriptors (ISO 13322-1)
+│   │   ├── granulometry.py              # PSD curves, D-values, Rosin-Rammler fit
+│   │   ├── calibration.py              # Pixel-to-mm calibration (reference object / manual scale)
+│   │   ├── depth_features.py           # Depth-based grain feature extraction
+│   │   └── volume_estimation.py        # Depth-integrated per-grain volume estimation
 │   └── static/
 │       ├── index.html                   # Single-page application frontend
 │       ├── css/
 │       │   └── style.css                # Dark theme stylesheet
 │       └── js/
 │           ├── app.js                   # Main controller
-│           ├── renderer.js              # Canvas rendering for grain images and PSD charts
+│           ├── renderer2d.js            # 2D canvas rendering for grain images and overlays
+│           ├── renderer3d.js            # Three.js 3D grain surface renderer
 │           └── websocket.js             # WebSocket client
 ├── tests/
 │   ├── __init__.py
 │   ├── test_generator.py                # Grain bed generation tests
 │   ├── test_segmentation.py             # Watershed segmentation tests
 │   ├── test_measurement.py              # Morphometric descriptor tests
-│   └── test_granulometry.py             # PSD and Rosin-Rammler fit tests
+│   ├── test_granulometry.py             # PSD and Rosin-Rammler fit tests
+│   ├── test_calibration.py             # Calibration tests
+│   └── test_psd_comparison.py          # PSD comparison with ground truth tests
 ├── docs/
 │   ├── architecture.md                  # System design documentation
 │   ├── granulometry_theory.md           # Mathematical foundations
 │   ├── development_history.md           # Changelog
 │   ├── references.md                    # Academic references
+│   ├── png/
+│   │   └── frontend.png                # Frontend screenshot
 │   └── svg/
 │       ├── architecture.svg             # System architecture diagram
-│       └── pipeline.svg                 # Processing pipeline diagram
+│       ├── pipeline.svg                 # Processing pipeline diagram
+│       └── psd_curve.svg                # PSD curve illustration
 ├── requirements.txt                     # Python dependencies
 ├── run_app.py                           # Uvicorn launcher with auto-browser
 ├── build.spec                           # PyInstaller spec file
