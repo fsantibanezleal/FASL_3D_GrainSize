@@ -50,16 +50,19 @@ References
 from __future__ import annotations
 
 import math
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 from scipy import ndimage
+
+from .calibration import Calibration
 
 
 def measure_grains(
     labels: np.ndarray,
     depth: np.ndarray,
     pixel_size: float = 1.0,
+    calibration: Optional[Calibration] = None,
 ) -> List[Dict]:
     """Measure geometric properties of each segmented grain.
 
@@ -72,6 +75,9 @@ def measure_grains(
     pixel_size : float
         Physical size of one pixel (e.g. mm/px).  All length and area
         measurements are scaled by this factor.
+    calibration : Calibration, optional
+        If provided and calibrated, overrides ``pixel_size`` with the
+        calibration's pixel_size_mm value.
 
     Returns
     -------
@@ -85,6 +91,10 @@ def measure_grains(
         ``mean_depth``, ``depth_range``, ``volume``,
         ``centroid_x``, ``centroid_y``.
     """
+    # Use calibration pixel_size if available and calibrated
+    if calibration is not None and calibration.calibrated:
+        pixel_size = calibration.pixel_size_mm
+
     unique_labels = np.unique(labels)
     unique_labels = unique_labels[unique_labels > 0]
 
