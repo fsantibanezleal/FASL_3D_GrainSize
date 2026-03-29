@@ -25,7 +25,7 @@ import csv
 import io
 import json
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
@@ -38,7 +38,13 @@ from .simulation.segmentation import (
     segment_grains_depth_edges,
 )
 from .simulation.grain_measurement import measure_grains
-from .simulation.granulometry import full_psd_analysis
+from .simulation.granulometry import (
+    full_psd_analysis,
+    compare_psd,
+    generate_sieve_ground_truth,
+    compute_psd,
+)
+from .simulation.calibration import Calibration
 from .simulation.depth_features import (
     compute_depth_gradient,
     detect_grain_peaks,
@@ -65,6 +71,8 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 # Shared mutable state
 # ------------------------------------------------------------------ #
 
+calibration = Calibration()
+
 state: dict = {
     "rgb": None,              # (H, W, 3) uint8
     "depth": None,            # (H, W) float32
@@ -72,6 +80,7 @@ state: dict = {
     "true_diameters": None,   # list[float]
     "measurements": None,     # list[dict]
     "psd": None,              # dict
+    "comparison": None,       # dict -- PSD comparison metrics
     "settings": {
         "bed_type": "lognormal",
         "width": 256,
@@ -125,6 +134,24 @@ class SettingsUpdate(BaseModel):
     psd_method: Optional[str] = None
 
 
+class CalibrateRequest(BaseModel):
+    """Request body for calibration.
+
+    Either provide (point_a, point_b, known_length_mm) for reference-object
+    calibration, or provide pixel_size_mm for direct pixel-size entry.
+    """
+    point_a: Optional[List[float]] = None
+    point_b: Optional[List[float]] = None
+    known_length_mm: Optional[float] = None
+    pixel_size_mm: Optional[float] = None
+
+
+class ComparePsdRequest(BaseModel):
+    """Request body for PSD comparison with ground truth sieve data."""
+    true_sizes: List[float] = Field(..., description="Sieve sizes (mm)")
+    true_passing: List[float] = Field(..., description="Cumulative passing (%)")
+
+
 # ------------------------------------------------------------------ #
 # Helpers
 # ------------------------------------------------------------------ #
@@ -170,8 +197,17 @@ def _run_measurements():
         return
 
     s = state["settings"]
+
+    # Use calibration if calibrated; otherwise fall back to settings pixel_size
+    effective_pixel_size = (
+        calibration.pixel_size_mm if calibration.calibrated
+        else s["pixel_size"]
+    )
+
     measurements = measure_grains(
-        state["labels"], state["depth"], pixel_size=s["pixel_size"],
+        state["labels"], state["depth"],
+        pixel_size=effective_pixel_size,
+        calibration=calibration if calibration.calibrated else None,
     )
     state["measurements"] = measurements
 
@@ -200,6 +236,8 @@ def _build_state_payload() -> dict:
         "true_diameters": state["true_diameters"],
         "measurements": state["measurements"],
         "psd": state["psd"],
+        "comparison": state["comparison"],
+        "calibration": calibration.get_state(),
         "settings": state["settings"],
     }
     return payload
@@ -336,6 +374,84 @@ async def api_export_csv():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=grain_measurements.csv"},
     )
+
+
+# ------------------------------------------------------------------ #
+# Calibration endpoints
+# ------------------------------------------------------------------ #
+
+@app.post("/api/calibrate")
+async def api_calibrate(req: CalibrateRequest):
+    """Calibrate pixel-to-mm conversion.
+
+    Supports two modes:
+    - Reference object: provide point_a, point_b, known_length_mm
+    - Direct pixel size: provide pixel_size_mm
+    """
+    if req.pixel_size_mm is not None:
+        ok = calibration.calibrate_from_pixel_size(req.pixel_size_mm)
+    elif (req.point_a is not None and req.point_b is not None
+          and req.known_length_mm is not None):
+        ok = calibration.calibrate_from_reference(
+            req.point_a, req.point_b, req.known_length_mm,
+        )
+    else:
+        return {"status": "error",
+                "detail": "Provide pixel_size_mm or (point_a, point_b, known_length_mm)"}
+
+    if not ok:
+        return {"status": "error", "detail": "Calibration failed (zero-length reference)"}
+
+    # Also sync the settings pixel_size to calibration value
+    state["settings"]["pixel_size"] = calibration.pixel_size_mm
+
+    # Re-run measurements with new calibration
+    if state["depth"] is not None and state["labels"] is not None:
+        _run_measurements()
+        payload = _build_state_payload()
+        await _broadcast({"type": "state", "data": payload})
+
+    return {"status": "ok", "calibration": calibration.get_state()}
+
+
+@app.get("/api/calibration")
+async def api_calibration():
+    """Return current calibration state."""
+    return calibration.get_state()
+
+
+# ------------------------------------------------------------------ #
+# PSD comparison endpoint
+# ------------------------------------------------------------------ #
+
+@app.post("/api/compare-psd")
+async def api_compare_psd(req: ComparePsdRequest):
+    """Compare estimated PSD against ground truth sieve data.
+
+    Returns RMSE, KS statistic, D50 comparison metrics, and the
+    interpolated ground truth curve for overlay rendering.
+    """
+    if state["psd"] is None:
+        return {"status": "error", "detail": "No PSD data available. Generate a grain bed first."}
+
+    estimated_sizes = state["psd"]["sizes"]
+    estimated_passing = state["psd"]["passing"]
+
+    metrics = compare_psd(
+        estimated_sizes, estimated_passing,
+        req.true_sizes, req.true_passing,
+    )
+
+    state["comparison"] = {
+        "metrics": metrics,
+        "true_sizes": req.true_sizes,
+        "true_passing": req.true_passing,
+    }
+
+    payload = _build_state_payload()
+    await _broadcast({"type": "state", "data": payload})
+
+    return {"status": "ok", "comparison": state["comparison"]}
 
 
 # ------------------------------------------------------------------ #

@@ -18,3 +18,8 @@ router = APIRouter(prefix="/api", tags=["grainsight"])
 # - POST /api/batch         -- Batch processing of multiple images
 # - GET  /api/presets       -- Parameter preset management
 # - POST /api/report        -- Generate PDF analysis report
+#
+# Endpoints added in main.py:
+# - POST /api/calibrate     -- Pixel-to-mm calibration (reference or direct)
+# - GET  /api/calibration   -- Current calibration state
+# - POST /api/compare-psd   -- Compare estimated PSD with ground truth sieve data

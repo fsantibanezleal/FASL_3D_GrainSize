@@ -64,8 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (data.depth)  Renderer2D.drawDepth("canvas-depth", data.depth);
         if (data.labels) Renderer2D.drawLabels("canvas-labels", data.labels);
 
-        // Draw PSD chart
-        Renderer2D.drawPSD("canvas-psd", data.psd);
+        // Draw PSD chart (with optional ground truth overlay)
+        Renderer2D.drawPSD("canvas-psd", data.psd, data.comparison);
 
         // Update metrics bar
         mGrains.textContent = data.num_grains || "--";
@@ -87,6 +87,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Update grain table
         updateTable(data.measurements);
+
+        // Update calibration status
+        if (data.calibration) updateCalibStatus(data.calibration);
+
+        // Update comparison results
+        if (data.comparison && data.comparison.metrics) {
+            showComparisonResults(data.comparison.metrics);
+        }
     }
 
     function updateTable(measurements) {
@@ -203,6 +211,94 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Also re-segment when PSD method or pixel size change
     ctrlPsdMethod.addEventListener("change", apiResegment);
+
+    // -------------------------------------------------------------- //
+    // Calibration controls
+    // -------------------------------------------------------------- //
+    const btnCalibPixelSize = document.getElementById("btn-calib-pixel-size");
+    const btnCalibReference = document.getElementById("btn-calib-reference");
+    const calibStatus       = document.getElementById("calib-status");
+
+    if (btnCalibPixelSize) {
+        btnCalibPixelSize.addEventListener("click", async () => {
+            const px = parseFloat(document.getElementById("ctrl-calib-pixel-size").value);
+            if (isNaN(px) || px <= 0) return;
+            try {
+                const resp = await fetch("/api/calibrate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pixel_size_mm: px }),
+                });
+                const data = await resp.json();
+                if (data.calibration) updateCalibStatus(data.calibration);
+            } catch (e) { console.error("Calibration error:", e); }
+        });
+    }
+
+    if (btnCalibReference) {
+        btnCalibReference.addEventListener("click", async () => {
+            const parsePoint = (s) => s.split(",").map(Number);
+            const pa = parsePoint(document.getElementById("ctrl-calib-point-a").value);
+            const pb = parsePoint(document.getElementById("ctrl-calib-point-b").value);
+            const len = parseFloat(document.getElementById("ctrl-calib-length").value);
+            if (pa.length !== 2 || pb.length !== 2 || isNaN(len)) return;
+            try {
+                const resp = await fetch("/api/calibrate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ point_a: pa, point_b: pb, known_length_mm: len }),
+                });
+                const data = await resp.json();
+                if (data.calibration) updateCalibStatus(data.calibration);
+            } catch (e) { console.error("Calibration error:", e); }
+        });
+    }
+
+    function updateCalibStatus(cal) {
+        if (calibStatus) {
+            calibStatus.textContent = cal.calibrated
+                ? `Calibrated (${cal.pixel_size_mm.toFixed(4)} mm/px)`
+                : "Uncalibrated";
+        }
+    }
+
+    // -------------------------------------------------------------- //
+    // Sieve data comparison
+    // -------------------------------------------------------------- //
+    const btnComparePsd   = document.getElementById("btn-compare-psd");
+    const comparisonDiv   = document.getElementById("comparison-results");
+
+    if (btnComparePsd) {
+        btnComparePsd.addEventListener("click", async () => {
+            const sizesStr  = document.getElementById("ctrl-sieve-sizes").value;
+            const passStr   = document.getElementById("ctrl-sieve-passing").value;
+            if (!sizesStr || !passStr) return;
+            const trueSizes   = sizesStr.split(",").map(Number);
+            const truePassing = passStr.split(",").map(Number);
+            if (trueSizes.some(isNaN) || truePassing.some(isNaN)) return;
+            try {
+                const resp = await fetch("/api/compare-psd", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ true_sizes: trueSizes, true_passing: truePassing }),
+                });
+                const data = await resp.json();
+                if (data.comparison && data.comparison.metrics) {
+                    showComparisonResults(data.comparison.metrics);
+                }
+            } catch (e) { console.error("Compare PSD error:", e); }
+        });
+    }
+
+    function showComparisonResults(m) {
+        if (!comparisonDiv) return;
+        comparisonDiv.innerHTML = `
+            RMSE: ${m.rmse.toFixed(2)}%<br>
+            KS stat: ${m.ks_statistic.toFixed(2)}%<br>
+            D50 est: ${m.estimated_d50.toFixed(2)} | true: ${m.true_d50.toFixed(2)}<br>
+            D50 rel. error: ${(m.d50_relative_error * 100).toFixed(1)}%
+        `;
+    }
 
     // Handle window resize
     window.addEventListener("resize", () => {
