@@ -21,20 +21,19 @@ In mining, particle size distribution determines processing efficiency and produ
 | Real-time capable | Conveyor belt online measurement potential |
 | Cost reduction | Single RGB-D camera vs $100K+ laser sizer |
 
-## Project Metrics & Status
+## Processing Pipeline
 
-| Metric | Status |
-|--------|--------|
-| Tests | 50 passing |
-| Per-grain descriptors | 18 (ISO 13322-1) |
-| PSD fitting | Rosin-Rammler with bounded n ∈ [0.5, 5] |
-| D-values | D10, D25, D50, D75, D80, D90 |
-| Calibration | Reference object or direct pixel_size_mm |
-| Comparison | RMSE, KS statistic, D50 relative error vs sieve |
+![Pipeline](docs/svg/pipeline.svg)
 
 ---
 
-## Mathematical Model
+## Frontend
+
+![Frontend](docs/png/frontend.png)
+
+---
+
+## Technical Approach — Granulometry Algorithms
 
 ### Equivalent Diameter — Comparing Irregular Grains
 Real rock fragments are never spherical. To compare on a common scale, we compute the diameter of a circle with the same area (ISO 13322-1):
@@ -90,18 +89,6 @@ where `z_base` is the local background depth and `dx`, `dy` are the calibrated p
 
 ---
 
-## Processing Pipeline
-
-![Pipeline](docs/svg/pipeline.svg)
-
----
-
-## Frontend
-
-![Frontend](docs/png/frontend.png)
-
----
-
 ## Architecture
 
 ![Architecture](docs/svg/architecture.svg)
@@ -124,6 +111,17 @@ where `z_base` is the local background depth and `dx`, `dy` are the calibrated p
 - **Real-time web UI** with dark theme, interactive controls, PSD chart, and measurement table
 - **WebSocket streaming** for real-time state updates during processing
 - **REST API** with full control over generation, segmentation, and analysis parameters
+
+## Project Metrics & Status
+
+| Metric | Status |
+|--------|--------|
+| Tests | 50 passing |
+| Per-grain descriptors | 18 (ISO 13322-1) |
+| PSD fitting | Rosin-Rammler with bounded n ∈ [0.5, 5] |
+| D-values | D10, D25, D50, D75, D80, D90 |
+| Calibration | Reference object or direct pixel_size_mm |
+| Comparison | RMSE, KS statistic, D50 relative error vs sieve |
 
 ---
 
