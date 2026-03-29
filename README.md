@@ -1,33 +1,213 @@
 # GrainSight -- 3D Particle Size & Granulometry Analyzer
 
-A web-based application for grain size estimation from RGB-D data using
-marker-based watershed segmentation, per-grain geometric measurement,
-and Rosin-Rammler PSD curve fitting.
+A web-based application for grain size estimation from RGB-D data using marker-based watershed segmentation, per-grain geometric measurement, and Rosin-Rammler PSD curve fitting. Built with Python/FastAPI on the backend and HTML5 Canvas for interactive browser-based visualization. The system generates synthetic grain beds, segments individual particles, computes 18 morphometric descriptors per grain, and fits particle size distributions with configurable models.
 
-## Features
+![Architecture](docs/svg/architecture.svg)
 
-- **Synthetic grain bed generation** with 5 distribution types: uniform,
-  normal, log-normal, bimodal, and Rosin-Rammler.
-- **Marker-based watershed segmentation** using depth gradient magnitude.
-- **18 per-grain metrics**: equivalent diameter, major/minor axes, aspect
-  ratio, circularity, depth-integrated volume, and more.
-- **PSD analysis**: cumulative curves (number and mass weighted), D-values
-  (D10/D25/D50/D75/D80/D90), Rosin-Rammler fit, and sieve simulation.
-- **Real-time web UI** with dark theme, interactive controls, PSD chart,
-  and measurement table.
-- **CSV export** of grain measurements.
+![Pipeline](docs/svg/pipeline.svg)
+
+## Frontend
+
+![Frontend](docs/png/frontend.png)
+
+---
 
 ## Quick Start
 
 ```bash
-cd "d:/_Repos/_SCIENCE/FASL_3D_GrainSize"
+# Clone and enter the project
+cd FASL_3D_GrainSize
+
+# Create and activate virtual environment
 python -m venv .venv
-source .venv/Scripts/activate    # Windows: .venv\Scripts\activate
+source .venv/Scripts/activate    # Windows Git Bash
+# source .venv/bin/activate      # Linux / macOS
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Run tests
+python tests/test_generator.py
+python tests/test_segmentation.py
+python tests/test_measurement.py
+python tests/test_granulometry.py
+
+# Start the application
 python run_app.py
+
+# Open http://127.0.0.1:8010 in your browser
 ```
 
-Open http://127.0.0.1:8010 in your browser.
+---
+
+## Features
+
+- **5 synthetic PSD generators**: uniform, normal, log-normal, bimodal, and Rosin-Rammler distributions
+- **Marker-based watershed segmentation** on depth gradient magnitude with configurable thresholds
+- **18 per-grain geometric descriptors** (ISO 13322-1): equivalent diameter, major/minor axes, aspect ratio, circularity, depth-integrated volume, and more
+- **PSD curves**: number-weighted and mass-weighted cumulative distributions
+- **D-value extraction**: D10, D25, D50, D75, D80, D90 percentile diameters
+- **Rosin-Rammler distribution fitting** with least-squares optimization
+- **Sieve analysis simulation** using standard sieve series
+- **Pixel-to-mm calibration**: reference object or direct scale entry
+- **PSD comparison with ground truth** sieve data (RMSE, KS statistic, D50 error)
+- **Depth-integrated volume estimation** per grain from depth map
+- **CSV export** of grain measurements for external analysis
+- **Real-time web UI** with dark theme, interactive controls, PSD chart, and measurement table
+- **WebSocket streaming** for real-time state updates during processing
+- **REST API** with full control over generation, segmentation, and analysis parameters
+
+---
+
+## Mathematical Model
+
+### Equivalent Diameter
+
+Each grain's equivalent circular diameter is derived from its projected area:
+
+```
+d_eq = 2 * sqrt(A / pi)
+```
+
+where `A` is the segmented grain area in pixels (or calibrated units).
+
+### Rosin-Rammler Particle Size Distribution
+
+The cumulative retained fraction is modeled as:
+
+```
+R(x) = 1 - exp(-(x / x_0)^n)
+```
+
+where `x_0` is the characteristic grain size (63.2% passing) and `n` is the spread index (uniformity coefficient).
+
+### Circularity
+
+A shape descriptor measuring how close a grain outline is to a perfect circle:
+
+```
+Circularity = 4 * pi * A / P^2
+```
+
+where `A` is the grain area and `P` is the grain perimeter. A perfect circle has circularity = 1.
+
+### Aspect Ratio
+
+```
+AR = major_axis / minor_axis
+```
+
+where the axes are derived from the eigenvalues of the grain region's inertia tensor.
+
+### 3D Surface Area (Triangle Decomposition)
+
+```
+A_3D = Sum  0.5 * |e_1 x e_2|
+```
+
+Each depth-map pixel quad is split into two triangles; the cross product of edge vectors yields the true 3D area.
+
+### Depth-Integrated Volume
+
+```
+V = Sum (z(i,j) - z_base) * dx * dy
+```
+
+where `z_base` is the local background depth and `dx`, `dy` are the calibrated pixel spacings.
+
+---
+
+## Project Structure
+
+```
+FASL_3D_GrainSize/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                          # FastAPI app entry point (port 8010)
+│   ├── api/
+│   │   ├── __init__.py
+│   │   └── routes.py                    # REST + WebSocket endpoints
+│   ├── simulation/
+│   │   ├── __init__.py
+│   │   ├── grain_generator.py           # Synthetic grain bed generator (5 distributions)
+│   │   ├── segmentation.py              # Marker-based watershed segmentation
+│   │   ├── measurement.py               # 18 per-grain morphometric descriptors
+│   │   └── granulometry.py              # PSD curves, D-values, Rosin-Rammler fit
+│   └── static/
+│       ├── index.html                   # Single-page application frontend
+│       ├── css/
+│       │   └── style.css                # Dark theme stylesheet
+│       └── js/
+│           ├── app.js                   # Main controller
+│           ├── renderer.js              # Canvas rendering for grain images and PSD charts
+│           └── websocket.js             # WebSocket client
+├── tests/
+│   ├── __init__.py
+│   ├── test_generator.py                # Grain bed generation tests
+│   ├── test_segmentation.py             # Watershed segmentation tests
+│   ├── test_measurement.py              # Morphometric descriptor tests
+│   └── test_granulometry.py             # PSD and Rosin-Rammler fit tests
+├── docs/
+│   ├── architecture.md                  # System design documentation
+│   ├── granulometry_theory.md           # Mathematical foundations
+│   ├── development_history.md           # Changelog
+│   ├── references.md                    # Academic references
+│   └── svg/
+│       ├── architecture.svg             # System architecture diagram
+│       └── pipeline.svg                 # Processing pipeline diagram
+├── requirements.txt                     # Python dependencies
+├── run_app.py                           # Uvicorn launcher with auto-browser
+├── build.spec                           # PyInstaller spec file
+└── Build_PyInstaller.ps1                # PowerShell build script
+```
+
+---
+
+## API Documentation
+
+### REST Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/generate` | Generate synthetic grain bed |
+| `POST` | `/api/segment` | Re-run grain segmentation |
+| `GET` | `/api/measurements` | Per-grain measurement table |
+| `GET` | `/api/psd` | PSD curve + percentiles + R-R fit |
+| `POST` | `/api/settings` | Update processing parameters |
+| `GET` | `/api/state` | Full state snapshot |
+| `GET` | `/api/export/csv` | Export measurements as CSV |
+
+### WebSocket
+
+| Path | Description |
+|------|-------------|
+| `WS /ws` | Real-time state streaming during processing |
+
+---
+
+## Port
+
+**8010** -- http://localhost:8010
+
+---
+
+## Technology Stack
+
+- **Backend**: Python 3.12+, FastAPI, Uvicorn, NumPy, SciPy, scikit-image
+- **Frontend**: Vanilla JavaScript, HTML5 Canvas, CSS3
+- **Protocol**: REST + WebSocket
+- **Packaging**: PyInstaller
+
+---
+
+## Documentation
+
+- [Architecture](docs/architecture.md) -- System design, components, data flow
+- [Granulometry Theory](docs/granulometry_theory.md) -- Mathematical foundations: PSD, Rosin-Rammler, watershed
+- [Development History](docs/development_history.md) -- Changelog and decisions
+- [References](docs/references.md) -- Academic papers and standards
+
+---
 
 ## Running Tests
 
@@ -36,7 +216,12 @@ python tests/test_generator.py
 python tests/test_segmentation.py
 python tests/test_measurement.py
 python tests/test_granulometry.py
+
+# Or run all tests
+python -m pytest tests/ -v
 ```
+
+---
 
 ## Building Standalone Executable
 
@@ -44,32 +229,16 @@ python tests/test_granulometry.py
 .\Build_PyInstaller.ps1
 ```
 
-## Technology Stack
+---
 
-- **Backend**: Python, FastAPI, Uvicorn, NumPy, SciPy, scikit-image
-- **Frontend**: Vanilla JavaScript, HTML5 Canvas, CSS3
-- **Protocol**: REST + WebSocket
-- **Packaging**: PyInstaller
+## References
 
-## Documentation
+- Rosin, P. & Rammler, E. (1933). The laws governing the fineness of powdered coal. *Journal of the Institute of Fuel*, 7:29-36.
+- Beucher, S. & Lantuejoul, C. (1979). Use of watersheds in contour detection. *International Workshop on Image Processing*.
+- ISO 13322-1:2014. Particle size analysis -- Image analysis methods.
+- Wentworth, C.K. (1922). A scale of grade and class terms for clastic sediments. *Journal of Geology*, 30(5).
 
-- [Architecture](docs/architecture.md)
-- [Granulometry Theory](docs/granulometry_theory.md)
-- [Development History](docs/development_history.md)
-- [References](docs/references.md)
-
-## API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/generate` | Generate synthetic grain bed |
-| POST | `/api/segment` | Re-run grain segmentation |
-| GET | `/api/measurements` | Per-grain measurement table |
-| GET | `/api/psd` | PSD curve + percentiles + R-R fit |
-| POST | `/api/settings` | Update processing parameters |
-| GET | `/api/state` | Full state snapshot |
-| GET | `/api/export/csv` | Export measurements as CSV |
-| WS | `/ws` | Real-time state streaming |
+---
 
 ## License
 
