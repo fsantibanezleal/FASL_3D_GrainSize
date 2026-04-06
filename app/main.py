@@ -36,6 +36,7 @@ from .simulation.grain_generator import generate_grain_bed
 from .simulation.segmentation import (
     segment_grains_watershed,
     segment_grains_depth_edges,
+    segment_grains_rgbd,
 )
 from .simulation.grain_measurement import measure_grains
 from .simulation.granulometry import (
@@ -177,6 +178,16 @@ def _run_segmentation():
             depth,
             edge_threshold=s["depth_edge_threshold"],
             min_grain_size=s["min_grain_size"],
+        )
+    elif s["segmentation_method"] == "rgbd":
+        labels = segment_grains_rgbd(
+            depth,
+            rgb=rgb,
+            min_grain_size=s["min_grain_size"],
+            smooth_sigma=s["smooth_sigma"],
+            min_distance=s["min_distance"],
+            depth_weight=s.get("depth_weight", 0.6),
+            color_weight=s.get("color_weight", 0.4),
         )
     else:
         labels = segment_grains_watershed(

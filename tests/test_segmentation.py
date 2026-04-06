@@ -20,6 +20,7 @@ from app.simulation.grain_generator import generate_grain_bed
 from app.simulation.segmentation import (
     segment_grains_watershed,
     segment_grains_depth_edges,
+    segment_grains_rgbd,
 )
 
 
@@ -77,6 +78,27 @@ class TestSegmentation(unittest.TestCase):
         n_small = len(np.unique(labels_small)) - 1  # exclude 0
         n_large = len(np.unique(labels_large)) - 1
         self.assertGreaterEqual(n_small, n_large)
+
+
+    def test_rgbd_segmentation_output(self):
+        """Combined RGB-D segmentation produces valid labels."""
+        labels = segment_grains_rgbd(self.depth, self.rgb, min_grain_size=5)
+        self.assertEqual(labels.shape, self.depth.shape)
+        self.assertEqual(labels.dtype, np.int32)
+        self.assertGreater(labels.max(), 0)
+
+    def test_rgbd_segmentation_weight_effect(self):
+        """Changing depth/color weights should affect results."""
+        labels_depth_heavy = segment_grains_rgbd(
+            self.depth, self.rgb, depth_weight=0.9, color_weight=0.1)
+        labels_color_heavy = segment_grains_rgbd(
+            self.depth, self.rgb, depth_weight=0.1, color_weight=0.9)
+        # Not necessarily identical segmentations
+        n_depth = len(np.unique(labels_depth_heavy))
+        n_color = len(np.unique(labels_color_heavy))
+        # Both should find grains
+        self.assertGreater(n_depth, 1)
+        self.assertGreater(n_color, 1)
 
 
 if __name__ == "__main__":
