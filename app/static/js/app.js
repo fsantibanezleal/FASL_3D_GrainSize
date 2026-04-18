@@ -51,6 +51,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const ctrlPeakThresh = document.getElementById("ctrl-peak-thresh");
     const ctrlPsdMethod  = document.getElementById("ctrl-psd-method");
     const ctrlPixelSize  = document.getElementById("ctrl-pixel-size");
+    const ctrlDepthW     = document.getElementById("ctrl-depth-weight");
+    const ctrlColorW     = document.getElementById("ctrl-color-weight");
+    const valDepthW      = document.getElementById("val-depth-weight");
+    const valColorW      = document.getElementById("val-color-weight");
+    const rowDepthW      = document.getElementById("row-depth-weight");
+    const rowColorW      = document.getElementById("row-color-weight");
 
     // -------------------------------------------------------------- //
     // State rendering
@@ -169,6 +175,8 @@ document.addEventListener("DOMContentLoaded", () => {
             peak_threshold_rel: parseFloat(ctrlPeakThresh.value) || 0.15,
             psd_method: ctrlPsdMethod.value,
             pixel_size: parseFloat(ctrlPixelSize.value) || 1.0,
+            depth_weight: parseFloat(ctrlDepthW.value),
+            color_weight: parseFloat(ctrlColorW.value),
         };
 
         try {
@@ -211,6 +219,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Also re-segment when PSD method or pixel size change
     ctrlPsdMethod.addEventListener("change", apiResegment);
+
+    // -------------------------------------------------------------- //
+    // RGB-D fusion weights: show/hide sliders, keep them linked to 1.0
+    // -------------------------------------------------------------- //
+
+    function updateRgbdVisibility() {
+        const isRgbd = (ctrlSegMethod.value === "rgbd");
+        const disp = isRgbd ? "flex" : "none";
+        if (rowDepthW) rowDepthW.style.display = disp;
+        if (rowColorW) rowColorW.style.display = disp;
+    }
+
+    function setWeightLabels() {
+        if (valDepthW) valDepthW.textContent = parseFloat(ctrlDepthW.value).toFixed(2);
+        if (valColorW) valColorW.textContent = parseFloat(ctrlColorW.value).toFixed(2);
+    }
+
+    // Keep weights normalised: moving depth => color = 1 - depth and vice versa.
+    if (ctrlDepthW) {
+        ctrlDepthW.addEventListener("input", () => {
+            const d = parseFloat(ctrlDepthW.value);
+            ctrlColorW.value = (1 - d).toFixed(2);
+            setWeightLabels();
+        });
+        ctrlDepthW.addEventListener("change", apiResegment);
+    }
+    if (ctrlColorW) {
+        ctrlColorW.addEventListener("input", () => {
+            const c = parseFloat(ctrlColorW.value);
+            ctrlDepthW.value = (1 - c).toFixed(2);
+            setWeightLabels();
+        });
+        ctrlColorW.addEventListener("change", apiResegment);
+    }
+
+    ctrlSegMethod.addEventListener("change", updateRgbdVisibility);
+    updateRgbdVisibility();
+    setWeightLabels();
 
     // -------------------------------------------------------------- //
     // Calibration controls
