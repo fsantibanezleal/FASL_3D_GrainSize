@@ -98,7 +98,7 @@ where `z_base` is the local background depth and `dx`, `dy` are the calibrated p
 ## Features
 
 - **5 synthetic PSD generators**: uniform, normal, log-normal, bimodal, and Rosin-Rammler distributions
-- **Marker-based watershed segmentation** on depth gradient magnitude with configurable thresholds
+- **Three segmentation methods**: marker-based watershed (depth), depth-edge thresholding, and combined RGB-D gradient fusion with tunable `depth_weight` / `color_weight`
 - **18 per-grain geometric descriptors** (ISO 13322-1): equivalent diameter, major/minor axes, aspect ratio, circularity, depth-integrated volume, and more
 - **PSD curves**: number-weighted and mass-weighted cumulative distributions
 - **D-value extraction**: D10, D25, D50, D75, D80, D90 percentile diameters
@@ -258,8 +258,11 @@ FASL_3D_GrainSize/
 
 - [Architecture](docs/architecture.md) -- System design, components, data flow
 - [Granulometry Theory](docs/granulometry_theory.md) -- Mathematical foundations: PSD, Rosin-Rammler, watershed
+- [Segmentation Theory](docs/segmentation_theory.md) -- Watershed, depth edges, and RGB-D fusion methods
 - [Development History](docs/development_history.md) -- Changelog and decisions
 - [References](docs/references.md) -- Academic papers and standards
+
+![Segmentation pipeline](docs/svg/segmentation-pipeline.svg)
 
 ## Technology Stack
 
