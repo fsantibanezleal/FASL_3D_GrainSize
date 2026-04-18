@@ -1,5 +1,41 @@
 # Development History -- GrainSight
 
+## v2.1.0 (2026-04-18)
+
+**RGB-D fusion segmentation integrated end-to-end.**
+
+### Segmentation
+- New `segment_grains_rgbd(depth, rgb, depth_weight, color_weight, ...)`
+  producing a fused gradient `w_d * |nabla z|_n + w_c * |nabla I|_n`
+  and running watershed on the combined surface.
+- Markers continue to be derived from smoothed depth peaks -- retains
+  the "one peak per grain" property while letting colour refine boundaries.
+- Two new tests (`test_rgbd_segmentation_output`,
+  `test_rgbd_segmentation_weight_effect`) bring the suite to 52 passing.
+
+### Frontend
+- Segmentation method dropdown now includes `RGB-D fusion`.
+- Two linked sliders (`Depth weight`, `Color weight`) expose the
+  fusion coefficients; moving either keeps `w_d + w_c = 1`.
+- Sliders only render when the `rgbd` method is selected.
+- Help modal documents recommended weight regimes.
+
+### Docs
+- New `docs/segmentation_theory.md` -- full derivation of all three
+  segmentation methods, when to use each, and parameter effects.
+- New `docs/svg/segmentation-pipeline.svg` -- diagram of the depth
+  and RGB-D watershed paths.
+- README reorganised: features call out the three methods; docs
+  index links segmentation theory; pipeline SVG embedded.
+
+### Backend
+- `SettingsUpdate` schema and default `state["settings"]` include
+  `depth_weight` and `color_weight`.
+- Settings endpoint forwards the new fields to `segment_grains_rgbd`.
+
+### Deployment
+- Added `passenger_wsgi.py` for cPanel Passenger ASGI deployment.
+
 ## v2.0.0 (2026-03-28)
 
 **Full implementation of the GrainSight 3D Particle Size & Granulometry Analyzer.**
