@@ -135,8 +135,9 @@
             <div class="ctrl-row">
                 <label>Method</label>
                 <select id="ctrl-seg-method">
-                    <option value="watershed" selected>Watershed</option>
+                    <option value="watershed" selected>Watershed (depth)</option>
                     <option value="depth_edges">Depth edges</option>
+                    <option value="rgbd">RGB-D fusion</option>
                 </select>
             </div>
             <div class="ctrl-row">
@@ -155,6 +156,19 @@
                 <label data-tooltip="Relative peak detection threshold (0-1)">Peak thresh</label>
                 <input type="number" id="ctrl-peak-thresh" value="0.15" min="0.01" max="1" step="0.01">
             </div>
+
+            <!-- RGB-D fusion weights (only used when method == rgbd) -->
+            <div class="ctrl-row rgbd-only" id="row-depth-weight">
+                <label data-tooltip="Weight for depth gradient in RGB-D fusion (0-1). depth_weight + color_weight = 1.">Depth weight</label>
+                <input type="range" id="ctrl-depth-weight" min="0" max="1" step="0.05" value="0.6">
+                <span class="slider-value" id="val-depth-weight">0.60</span>
+            </div>
+            <div class="ctrl-row rgbd-only" id="row-color-weight">
+                <label data-tooltip="Weight for color gradient in RGB-D fusion (0-1). Auto-linked to depth weight.">Color weight</label>
+                <input type="range" id="ctrl-color-weight" min="0" max="1" step="0.05" value="0.4">
+                <span class="slider-value" id="val-color-weight">0.40</span>
+            </div>
+
             <button class="btn btn-full" id="btn-resegment">
                 <span class="spinner" id="spinner-seg"></span>
                 Re-Segment
@@ -250,6 +264,17 @@
         3. Detect grain peaks (local maxima of depth).<br>
         4. Run watershed transform using peaks as markers.<br>
         5. Merge small fragments below the minimum grain size.</p>
+
+        <h3>RGB-D Fusion (Combined Method)</h3>
+        <p>The <strong>RGB-D fusion</strong> method builds a weighted combined gradient
+        <code>|nabla F| = w_d * |nabla z|_norm + w_c * |nabla I|_norm</code>
+        where depth and color gradients are normalised to [0, 1].
+        Tune <em>Depth weight</em> and <em>Color weight</em> (they auto-sum to 1):</p>
+        <p>
+        - <strong>depth_weight = 0.9</strong>: industrial conveyor with uniform lighting -- depth dominates.<br>
+        - <strong>depth_weight = 0.6</strong> (default): balanced mix for general scenes.<br>
+        - <strong>depth_weight = 0.3</strong>: textured surfaces where color boundaries help.
+        </p>
 
         <h3>Per-Grain Metrics</h3>
         <p><strong>Equivalent diameter</strong>: <code>d_eq = 2*sqrt(A/pi)</code>,
