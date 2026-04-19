@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" font-family="Segoe UI, sans-serif" font-size="12">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#d29922"/>
+    </marker>
+  </defs>
+
+  <rect width="960" height="360" fill="#0d1117" rx="8"/>
+  <text x="480" y="28" text-anchor="middle" fill="#d29922" font-size="16" font-weight="bold">Segmentation Pipeline — Depth, Depth-Edge, and RGB-D Fusion</text>
+
+  <!-- Depth input -->
+  <rect x="30" y="60" width="120" height="60" rx="6" fill="#161b22" stroke="#d29922"/>
+  <text x="90" y="85" text-anchor="middle" fill="#d29922" font-weight="bold">Depth z</text>
+  <text x="90" y="103" text-anchor="middle" fill="#8b949e">H x W, float</text>
+
+  <!-- RGB input -->
+  <rect x="30" y="250" width="120" height="60" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="90" y="275" text-anchor="middle" fill="#58a6ff" font-weight="bold">RGB I</text>
+  <text x="90" y="293" text-anchor="middle" fill="#8b949e">H x W x 3</text>
+
+  <!-- Smooth -->
+  <rect x="190" y="60" width="120" height="60" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="250" y="85" text-anchor="middle" fill="#e6edf3" font-weight="bold">Gaussian</text>
+  <text x="250" y="103" text-anchor="middle" fill="#8b949e">sigma</text>
+  <line x1="150" y1="90" x2="185" y2="90" stroke="#d29922" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Depth gradient -->
+  <rect x="350" y="60" width="130" height="60" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="415" y="85" text-anchor="middle" fill="#e6edf3" font-weight="bold">|nabla z|</text>
+  <text x="415" y="103" text-anchor="middle" fill="#8b949e">Sobel + hypot</text>
+  <line x1="310" y1="90" x2="345" y2="90" stroke="#d29922" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Color gradient -->
+  <rect x="190" y="250" width="120" height="60" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="250" y="275" text-anchor="middle" fill="#e6edf3" font-weight="bold">Gray + smooth</text>
+  <text x="250" y="293" text-anchor="middle" fill="#8b949e">mean(R,G,B)</text>
+  <line x1="150" y1="280" x2="185" y2="280" stroke="#58a6ff" stroke-width="2" marker-end="url(#arr)"/>
+
+  <rect x="350" y="250" width="130" height="60" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="415" y="275" text-anchor="middle" fill="#e6edf3" font-weight="bold">|nabla I|</text>
+  <text x="415" y="293" text-anchor="middle" fill="#8b949e">Sobel + hypot</text>
+  <line x1="310" y1="280" x2="345" y2="280" stroke="#58a6ff" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Fusion -->
+  <rect x="515" y="150" width="150" height="80" rx="6" fill="#161b22" stroke="#d29922" stroke-dasharray="4 3"/>
+  <text x="590" y="178" text-anchor="middle" fill="#d29922" font-weight="bold">Fused gradient</text>
+  <text x="590" y="197" text-anchor="middle" fill="#8b949e">w_d |nabla z|</text>
+  <text x="590" y="213" text-anchor="middle" fill="#8b949e">+ w_c |nabla I|</text>
+  <line x1="480" y1="90" x2="515" y2="165" stroke="#d29922" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="480" y1="280" x2="515" y2="215" stroke="#58a6ff" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Peak markers -->
+  <rect x="515" y="40" width="150" height="60" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="590" y="65" text-anchor="middle" fill="#e6edf3" font-weight="bold">peak_local_max</text>
+  <text x="590" y="83" text-anchor="middle" fill="#8b949e">min_distance, thresh</text>
+  <line x1="310" y1="105" x2="515" y2="70" stroke="#d29922" stroke-width="1.5" marker-end="url(#arr)" stroke-dasharray="2 2"/>
+
+  <!-- Watershed -->
+  <rect x="700" y="100" width="120" height="70" rx="6" fill="#161b22" stroke="#d29922"/>
+  <text x="760" y="128" text-anchor="middle" fill="#d29922" font-weight="bold">Watershed</text>
+  <text x="760" y="146" text-anchor="middle" fill="#8b949e">flood from</text>
+  <text x="760" y="160" text-anchor="middle" fill="#8b949e">markers</text>
+  <line x1="665" y1="70" x2="700" y2="125" stroke="#d29922" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="665" y1="190" x2="700" y2="140" stroke="#d29922" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Post -->
+  <rect x="700" y="200" width="120" height="60" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="760" y="225" text-anchor="middle" fill="#e6edf3" font-weight="bold">Merge small</text>
+  <text x="760" y="243" text-anchor="middle" fill="#8b949e">&lt; min_grain_size</text>
+  <line x1="760" y1="170" x2="760" y2="195" stroke="#d29922" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Labels output -->
+  <rect x="850" y="190" width="90" height="80" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="895" y="220" text-anchor="middle" fill="#3fb950" font-weight="bold">Labels</text>
+  <text x="895" y="238" text-anchor="middle" fill="#8b949e">int32</text>
+  <text x="895" y="254" text-anchor="middle" fill="#8b949e">H x W</text>
+  <line x1="820" y1="230" x2="848" y2="230" stroke="#3fb950" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Legend -->
+  <text x="30" y="340" fill="#8b949e" font-size="11">Solid amber path: depth watershed (method=watershed). Dashed amber box: fused gradient (method=rgbd). Blue path: color gradient (adds information under the rgbd method).</text>
+</svg>
