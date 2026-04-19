@@ -98,7 +98,7 @@ where `z_base` is the local background depth and `dx`, `dy` are the calibrated p
 ## Features
 
 - **5 synthetic PSD generators**: uniform, normal, log-normal, bimodal, and Rosin-Rammler distributions
-- **Marker-based watershed segmentation** on depth gradient magnitude with configurable thresholds
+- **Three segmentation methods**: marker-based watershed (depth), depth-edge thresholding, and combined RGB-D gradient fusion with tunable `depth_weight` / `color_weight`
 - **18 per-grain geometric descriptors** (ISO 13322-1): equivalent diameter, major/minor axes, aspect ratio, circularity, depth-integrated volume, and more
 - **PSD curves**: number-weighted and mass-weighted cumulative distributions
 - **D-value extraction**: D10, D25, D50, D75, D80, D90 percentile diameters
@@ -209,7 +209,9 @@ FASL_3D_GrainSize/
 │   └── test_psd_comparison.py          # PSD comparison with ground truth tests
 ├── docs/
 │   ├── architecture.md                  # System design documentation
+│   ├── user_guide.md                    # Workflow, recipes, PSD interpretation
 │   ├── granulometry_theory.md           # Mathematical foundations
+│   ├── segmentation_theory.md           # Watershed, depth edges, RGB-D fusion
 │   ├── development_history.md           # Changelog
 │   ├── references.md                    # Academic references
 │   ├── png/
@@ -248,18 +250,28 @@ FASL_3D_GrainSize/
 
 ---
 
-## Port
+### Port Assignment
 
 **8010** -- http://localhost:8010
+
+Port `8010` is reserved for GrainSight in the FASL VPS port ledger
+(`infrastructure/vps/hetzner-fasl-prod/README.md` in
+[`CAOS_MANAGE`](https://github.com/fsantibanezleal/CAOS_MANAGE/blob/main/infrastructure/vps/hetzner-fasl-prod/README.md)).
+Local dev, Docker, and Hetzner production (`fasl-work.com`) all bind to the
+same port so nginx upstream and systemd unit templates stay identical.
 
 ---
 
 ## Documentation
 
 - [Architecture](docs/architecture.md) -- System design, components, data flow
+- [User Guide](docs/user_guide.md) -- Generate -> Segment -> Calibrate -> Export workflow, recipes, PSD interpretation
 - [Granulometry Theory](docs/granulometry_theory.md) -- Mathematical foundations: PSD, Rosin-Rammler, watershed
+- [Segmentation Theory](docs/segmentation_theory.md) -- Watershed, depth edges, and RGB-D fusion methods
 - [Development History](docs/development_history.md) -- Changelog and decisions
 - [References](docs/references.md) -- Academic papers and standards
+
+![Segmentation pipeline](docs/svg/segmentation-pipeline.svg)
 
 ## Technology Stack
 

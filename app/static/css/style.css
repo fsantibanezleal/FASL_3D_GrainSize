@@ -150,6 +150,19 @@ body {
     accent-color: var(--accent);
 }
 
+.ctrl-row .slider-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 34px;
+    text-align: right;
+}
+
+/* RGB-D fusion rows are hidden by default (shown when method=rgbd) */
+.ctrl-row.rgbd-only {
+    display: none;
+}
+
 .btn {
     display: inline-flex;
     align-items: center;

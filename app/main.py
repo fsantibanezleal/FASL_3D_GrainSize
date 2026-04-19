@@ -98,6 +98,8 @@ state: dict = {
         "min_distance": 5,
         "peak_threshold_rel": 0.15,
         "depth_edge_threshold": 2.0,
+        "depth_weight": 0.6,
+        "color_weight": 0.4,
         "pixel_size": 1.0,
         "psd_method": "number",
     },
@@ -131,6 +133,8 @@ class SettingsUpdate(BaseModel):
     min_distance: Optional[int] = None
     peak_threshold_rel: Optional[float] = None
     depth_edge_threshold: Optional[float] = None
+    depth_weight: Optional[float] = None
+    color_weight: Optional[float] = None
     pixel_size: Optional[float] = None
     psd_method: Optional[str] = None
 
