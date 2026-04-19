@@ -1,5 +1,19 @@
 # Development History -- GrainSight
 
+## v2.1.1 (2026-04-18)
+
+**Docs and deployment hygiene.**
+
+- New `docs/user_guide.md` covering the Generate -> Segment -> Calibrate ->
+  Export workflow, how to pick a segmentation method and weights, how to
+  read D-values and Rosin-Rammler fits, and PSD comparison with sieve
+  data. Linked from README Documentation section.
+- README `## Port` promoted to `### Port Assignment` with an explicit
+  link to the CAOS_MANAGE Hetzner VPS port ledger, per
+  project-quality-standards Part 3 step 15.
+- Project-structure tree in README now lists `user_guide.md` and
+  `segmentation_theory.md`.
+
 ## v2.1.0 (2026-04-18)
 
 **RGB-D fusion segmentation integrated end-to-end.**
