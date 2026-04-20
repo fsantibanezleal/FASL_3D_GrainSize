@@ -33,8 +33,18 @@ Browser (SPA)                 FastAPI Server (port 8010)
 1. **Generation**: `grain_generator.py` creates synthetic RGB-D images with
    ground-truth labels and known grain diameters.
 
-2. **Segmentation**: `segmentation.py` processes the depth map through
-   the watershed pipeline to produce a label image.
+2. **Segmentation**: `segmentation.py` produces a label image from the depth
+   map (and optionally the RGB image). The active algorithm is selected by
+   `settings.segmentation_method` and dispatched in `main.py::_run_segmentation`:
+
+   | `segmentation_method` | Function | Inputs | Notes |
+   |-----------------------|----------|--------|-------|
+   | `watershed` (default) | `segment_grains_watershed` | depth + optional RGB | Marker-based watershed over smoothed depth with peak-local-max seeds (`smooth_sigma`, `min_distance`, `peak_threshold_rel`). |
+   | `depth_edges` | `segment_grains_depth_edges` | depth | Gradient-threshold pipeline (`depth_edge_threshold`); faster, no RGB. |
+   | `rgbd` | `segment_grains_rgbd` | depth + RGB | Fuses depth and color gradients with a convex combination `depth_weight + color_weight = 1`. Robust against flat-depth but colored grains. |
+
+   See [`docs/segmentation_theory.md`](segmentation_theory.md) for the
+   mathematical treatment of each method and a comparison of failure modes.
 
 3. **Measurement**: `grain_measurement.py` computes geometric properties
    (area, diameter, axes, circularity, volume) for each labelled grain.
