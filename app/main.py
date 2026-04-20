@@ -32,6 +32,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
+from . import __version__
 from .simulation.grain_generator import generate_grain_bed
 from .simulation.segmentation import (
     segment_grains_watershed,
@@ -62,7 +63,7 @@ import numpy as np
 app = FastAPI(
     title="GrainSight",
     description="3D Particle Size & Granulometry Analyzer",
-    version="2.0.0",
+    version=__version__,
 )
 
 static_dir = Path(__file__).parent / "static"
@@ -279,6 +280,34 @@ async def _broadcast(msg: dict):
 async def root():
     """Serve the single-page application."""
     return FileResponse(str(static_dir / "index.html"))
+
+
+# ------------------------------------------------------------------ #
+# System endpoints (liveness / version probes)
+# ------------------------------------------------------------------ #
+
+@app.get("/api/health", tags=["System"])
+async def api_health():
+    """Lightweight liveness probe for load balancers and deployment tooling.
+
+    Returns the app version and whether a simulated scene is currently loaded
+    in the in-memory state.
+    """
+    return {
+        "status": "ok",
+        "version": __version__,
+        "sim_initialized": state["rgb"] is not None,
+    }
+
+
+@app.get("/api/version", tags=["System"])
+async def api_version():
+    """Return the current GrainSight package version.
+
+    Sourced from ``app.__version__`` so the HTTP surface, the FastAPI metadata,
+    and the README badge all stay in lockstep.
+    """
+    return {"version": __version__}
 
 
 @app.post("/api/generate")
