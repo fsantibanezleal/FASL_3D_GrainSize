@@ -1,5 +1,8 @@
 # GrainSight -- 3D Particle Size & Granulometry Analyzer
 
+[![License](https://img.shields.io/github/license/fsantibanezleal/FASL_3D_GrainSize)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-live-2ea44f)](https://grainsize.fasl-work.com)
+
 A web-based application for grain size estimation from RGB-D data using marker-based watershed segmentation, per-grain geometric measurement, and Rosin-Rammler PSD curve fitting. Built with Python/FastAPI on the backend and HTML5 Canvas for interactive browser-based visualization. The system generates synthetic grain beds, segments individual particles, computes 18 morphometric descriptors per grain, and fits particle size distributions with configurable models.
 
 ---
